@@ -5,6 +5,20 @@ body {
   color: #003366;
 }
 
+.top-bar {
+  position: fixed;
+  top: 0;
+  width: 100%;
+  z-index: 1000;
+}
+
+/* Ajuste para evitar que o conteúdo fique atrás da top-bar */
+main {
+  margin-top: 220px; /* ajuste conforme a altura total de header + nav */
+}
+
+
+
 header {
   background: #004080;
   color: white;
@@ -29,6 +43,37 @@ nav a {
   margin: 10px;
   border-radius: 10px;
 }
+
+/* carrocel do bootstrap com incerção de legenda */
+.carousel img {
+  max-height: 500px;
+  object-fit: cover;
+}
+
+.carousel-caption {
+  background-color: rgba(0, 0, 0, 0.5); /* fundo semi-transparente */
+  padding: 15px;
+  border-radius: 10px;
+}
+
+.carousel-caption h5, 
+.carousel-caption p {
+  color: #fff;
+}
+
+
+
+
+/* galeria do bootstrap para carrocel */
+.gallery img {
+  transition: transform 0.3s ease;
+}
+
+.gallery img:hover {
+  transform: scale(1.05);
+}
+
+
 
 .media-box {
   display: flex;

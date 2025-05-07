@@ -9,34 +9,51 @@
 </head>
 <body>
 
-    <!-- Cabeçalho -->
-    <header class="bg-primary text-white p-4 text-center">
-      <h1>Conteúdos da Semana</h1>
-        <p>Desenvolvendo talentos com paixão e dedicação</p>
-    </header>
-
-    <!-- Navegação -->
-    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
-        <div class="container">
-            <a class="navbar-brand" href="index.html">Início</a>
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-                <span class="navbar-toggler-icon"></span>
-            </button>
-            <div class="collapse navbar-collapse" id="navbarNav">
-                <ul class="navbar-nav ms-auto">
-                    <li class="nav-item"><a class="nav-link" href="sobre.html">Sobre Nós</a></li>
-                    <li class="nav-item"><a class="nav-link" href="conteudos.html">Conteúdos</a></li>
-                    <li class="nav-item"><a class="nav-link" href="contato.html">Contato</a></li>
-                    <li class="nav-item"><a class="nav-link" href="#"></a></li>
-                </ul>
+    <!-- Cabeçalho -->    <!-- Navegação -->
+    <div class="top-bar">
+        <header class="bg-primary text-white p-4 text-center">
+            <h1>Conteúdos da Semana</h1>
+            <p>Desenvolvendo talentos com paixão e dedicação</p>
+        </header>
+    
+        <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+            <div class="container">
+                <a class="navbar-brand" href="index.html">Início</a>
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+                <div class="collapse navbar-collapse" id="navbarNav">
+                    <ul class="navbar-nav ms-auto">
+                        <li class="nav-item"><a class="nav-link" href="sobre.html">Sobre Nós</a></li>
+                        <li class="nav-item"><a class="nav-link" href="conteudos.html">Conteúdos</a></li>
+                        <li class="nav-item"><a class="nav-link" href="contato.html">Contato</a></li>
+                    </ul>
+                </div>
             </div>
-        </div>
-    </nav>
+        </nav>
+    </div>
 
     <!-- Conteúdo principal -->
     <main class="container py-4">
-        <!-- Aqui vai o conteúdo específico de cada página -->
-        <h2>Bem-vindo à Escola de Música</h2>
+
+           <!-- Galeria de Imagens -->
+    <section class="gallery mb-5">
+        <h3 class="text-center mb-4">Nossa Galeria</h3>
+        <div class="row justify-content-center">
+            <div class="col-sm-6 col-md-4 col-lg-3 mb-4">
+                <img src="static/img/galeria1.JPG" class="img-fluid rounded shadow-sm" alt="Aula de teclado">
+            </div>
+            <div class="col-sm-6 col-md-4 col-lg-3 mb-4">
+                <img src="static/img/galeria2.JPG" class="img-fluid rounded shadow-sm" alt="Aula de violão">
+            </div>
+            <div class="col-sm-6 col-md-4 col-lg-3 mb-4">
+                <img src="static/img/galeria3.jpg" class="img-fluid rounded shadow-sm" alt="Aula de bateria">
+            </div>
+            <div class="col-sm-6 col-md-4 col-lg-3 mb-4">
+                <img src="static/img/galeria4.jpg" class="img-fluid rounded shadow-sm" alt="Alunos reunidos">
+            </div>
+        </div>
+    </section>
         
 
 
@@ -46,9 +63,8 @@
             <h3>Workshop de Bateria</h3>
             <p>Apresentação com os alunos da turma de sábado.</p>
           </div>
-          <div class="media-item">
-            <img src="img/aula-teclado.jpg" alt="Aula de Teclado">
-            <h3>Aula de Teclado Avançado</h3>
+          <div class="media-item">           
+            <h3>Descrição do Video</h3>
             <p>Explorando harmonias modernas com os alunos do nível 2.</p>
           </div>
         </section>

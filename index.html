@@ -2,12 +2,12 @@
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8">
-  <title>Totem Interativo - Avatar Silhueta com Libras e Voz</title>
+  <title>Totem Interativo - Silhueta Elegante com Libras</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
-      background: #080810;
-      color: #ffffff;
+      background: #e2dfd8; /* Fundo claro para destacar a silhueta preta */
+      color: #1a1a1a;
       font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
       display: flex;
       flex-direction: column;
@@ -34,20 +34,19 @@
       bottom: 40px;
       left: 50%;
       transform: translateX(-50%);
-      background: rgba(15, 23, 42, 0.85);
-      border: 1px solid #00f0ff;
-      box-shadow: 0 0 25px rgba(0, 240, 255, 0.25);
+      background: rgba(255, 255, 255, 0.9);
+      border: 2px solid #1a1a1a;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
       padding: 16px 32px;
-      border-radius: 16px;
+      border-radius: 12px;
       text-align: center;
       z-index: 10;
-      backdrop-filter: blur(8px);
     }
-    .status { font-size: 1.2rem; color: #00f0ff; font-weight: 600; letter-spacing: 0.5px; }
-    .subtitle { font-size: 0.95rem; color: #94a3b8; margin-top: 6px; }
+    .status { font-size: 1.2rem; color: #1a1a1a; font-weight: 700; }
+    .subtitle { font-size: 0.95rem; color: #555555; margin-top: 4px; }
   </style>
 
-  <!-- CDNs do MediaPipe (Mãos e Câmera) -->
+  <!-- CDNs do MediaPipe -->
   <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
   <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js" crossorigin="anonymous"></script>
 </head>
@@ -58,8 +57,8 @@
     <canvas id="output-canvas"></canvas>
     
     <div id="ui-overlay">
-      <div id="status" class="status">Inicializando Avatar...</div>
-      <div id="subtitle" class="subtitle">Aguardando interação visual e gestual</div>
+      <div id="status" class="status">Silhueta Pronta</div>
+      <div id="subtitle" class="subtitle">Faça um sinal de Libras em frente à câmera</div>
     </div>
   </div>
 
@@ -70,7 +69,7 @@
     const statusDiv = document.getElementById('status');
     const subtitleDiv = document.getElementById('subtitle');
 
-    let currentPerfil = 'masculino'; // 'masculino' | 'feminino'
+    let currentPerfil = 'masculino'; // 'masculino' ou 'feminino'
     let currentGesture = '';
 
     function resizeCanvas() {
@@ -80,7 +79,6 @@
     window.addEventListener('resize', resizeCanvas);
     resizeCanvas();
 
-    // 1. Síntese de Voz (Resposta do Avatar)
     function falar(texto) {
       if ('speechSynthesis' in window) {
         window.speechSynthesis.cancel();
@@ -92,66 +90,109 @@
       }
     }
 
-    // 2. Renderização da Silhueta com Traços e Efeito Glow
-    function drawSilhouette(ctx, width, height, handLandmarksList) {
-      ctx.clearRect(0, 0, width, height);
-
-      // Estilo de traço neon
-      const primaryColor = currentPerfil === 'feminino' ? '#ff007f' : '#00f0ff';
-      ctx.strokeStyle = primaryColor;
-      ctx.shadowColor = primaryColor;
-      ctx.shadowBlur = 18;
-      ctx.lineWidth = 3.5;
-      ctx.lineCap = 'round';
-
+    // Desenha o corpo preenchido em preto (Padrão das Imagens)
+    function drawBodySilhouette(ctx, width, height) {
       const cx = width / 2;
-      const cy = height / 2.3;
+      const cy = height / 2.2;
 
-      // Contorno da Cabeça
-      ctx.beginPath();
-      ctx.ellipse(cx, cy - 90, 55, 75, 0, 0, Math.PI * 2);
-      ctx.stroke();
+      ctx.fillStyle = '#111111'; // Preto sólido da silhueta
 
-      // Olhos
-      ctx.beginPath();
-      ctx.arc(cx - 20, cy - 100, 5, 0, Math.PI * 2);
-      ctx.arc(cx + 20, cy - 100, 5, 0, Math.PI * 2);
-      ctx.stroke();
+      if (currentPerfil === 'masculino') {
+        // --- CABEÇA ---
+        ctx.beginPath();
+        ctx.ellipse(cx, cy - 140, 40, 52, 0, 0, Math.PI * 2);
+        ctx.fill();
 
-      // Boca (Sorriso)
-      ctx.beginPath();
-      ctx.arc(cx, cy - 75, 18, 0.15 * Math.PI, 0.85 * Math.PI);
-      ctx.stroke();
+        // --- GOLA & GRAVATA (Acentos em Branco/Cinza) ---
+        ctx.fillStyle = '#ffffff';
+        ctx.beginPath(); // Gola da camisa
+        ctx.moveTo(cx - 18, cy - 90);
+        ctx.lineTo(cx, cy - 50);
+        ctx.lineTo(cx + 18, cy - 90);
+        ctx.fill();
 
-      // Pescoço e Ombros
-      ctx.beginPath();
-      ctx.moveTo(cx - 15, cy - 15);
-      ctx.lineTo(cx - 15, cy + 10);
-      ctx.lineTo(cx - 110, cy + 60); // Ombro Esquerdo
-      ctx.lineTo(cx - 120, cy + 280); // Lateral Esquerda do Corpo
-      
-      ctx.moveTo(cx + 15, cy - 15);
-      ctx.lineTo(cx + 15, cy + 10);
-      ctx.lineTo(cx + 110, cy + 60); // Ombro Direito
-      ctx.lineTo(cx + 120, cy + 280); // Lateral Direita do Corpo
-      ctx.stroke();
+        ctx.fillStyle = '#111111';
+        ctx.beginPath(); // Gravata
+        ctx.moveTo(cx - 6, cy - 75);
+        ctx.lineTo(cx + 6, cy - 75);
+        ctx.lineTo(cx + 4, cy - 15);
+        ctx.lineTo(cx, cy - 5);
+        ctx.lineTo(cx - 4, cy - 15);
+        ctx.fill();
 
-      // Traços das Mãos / Libras em Tempo Real
-      if (handLandmarksList && handLandmarksList.length > 0) {
-        handLandmarksList.forEach(landmarks => {
-          ctx.beginPath();
-          landmarks.forEach((lm, index) => {
-            const x = (1 - lm.x) * width; // Espelhado para interação nativa
-            const y = lm.y * height;
-            if (index === 0) ctx.moveTo(x, y);
-            else ctx.lineTo(x, y);
-          });
-          ctx.stroke();
-        });
+        // --- CORPO & TERNO ---
+        ctx.beginPath();
+        ctx.moveTo(cx - 18, cy - 88);
+        ctx.lineTo(cx - 95, cy - 50);  // Ombro esquerdo
+        ctx.lineTo(cx - 75, cy + 120); // Cintura esquerda
+        ctx.lineTo(cx - 85, cy + 320); // Perna esquerda
+        ctx.lineTo(cx - 30, cy + 320);
+        ctx.lineTo(cx - 5, cy + 140);  // Entrepernas
+        ctx.lineTo(cx + 5, cy + 140);
+        ctx.lineTo(cx + 30, cy + 320);
+        ctx.lineTo(cx + 85, cy + 320); // Perna direita
+        ctx.lineTo(cx + 75, cy + 120); // Cintura direita
+        ctx.lineTo(cx + 95, cy - 50);  // Ombro direito
+        ctx.lineTo(cx + 18, cy - 88);
+        ctx.fill();
+
+      } else {
+        // --- PERFIL FEMININO ---
+        ctx.beginPath();
+        ctx.ellipse(cx, cy - 135, 38, 50, 0, 0, Math.PI * 2); // Cabeça/Cabelo
+        ctx.fill();
+
+        ctx.beginPath();
+        ctx.moveTo(cx - 15, cy - 85);
+        ctx.lineTo(cx - 75, cy - 55);  // Ombro esquerdo
+        ctx.lineTo(cx - 55, cy + 40);  // Cintura marcada
+        ctx.lineTo(cx - 70, cy + 300); // Calça/Saia
+        ctx.lineTo(cx + 70, cy + 300);
+        ctx.lineTo(cx + 55, cy + 40);
+        ctx.lineTo(cx + 75, cy - 55);  // Ombro direito
+        ctx.lineTo(cx + 15, cy - 85);
+        ctx.fill();
       }
     }
 
-    // 3. Reconhecimento de Gestos Simplificados de Libras
+    // Desenha as mãos rastreadas em BRANCO (Detalhe de Luva Branca)
+    function drawWhiteGloveHands(ctx, width, height, handLandmarksList) {
+      if (!handLandmarksList) return;
+
+      handLandmarksList.forEach(landmarks => {
+        // Estilo da luva
+        ctx.fillStyle = '#ffffff';
+        ctx.strokeStyle = '#cccccc';
+        ctx.lineWidth = 2;
+
+        // Desenha palma e preenchimento dos dedos em formato estilizado
+        landmarks.forEach((lm) => {
+          const x = (1 - lm.x) * width;
+          const y = lm.y * height;
+
+          ctx.beginPath();
+          ctx.arc(x, y, 11, 0, Math.PI * 2); // Nós dos dedos com "efeito luva"
+          ctx.fill();
+          ctx.stroke();
+        });
+
+        // Conecta as articulações da luva
+        const connections = Hands.HAND_CONNECTIONS;
+        ctx.beginPath();
+        ctx.strokeStyle = '#ffffff';
+        ctx.lineWidth = 14; // Traço espesso para simular o preenchimento da luva
+        ctx.lineCap = 'round';
+
+        connections.forEach(([i, j]) => {
+          const p1 = landmarks[i];
+          const p2 = landmarks[j];
+          ctx.moveTo((1 - p1.x) * width, p1.y * height);
+          ctx.lineTo((1 - p2.x) * width, p2.y * height);
+        });
+        ctx.stroke();
+      });
+    }
+
     function detectLibras(handLandmarks) {
       if (!handLandmarks) return null;
 
@@ -159,12 +200,12 @@
       const indexTip = handLandmarks[8];
       const thumbTip = handLandmarks[4];
 
-      // Gesto: Mão levantada acima da cabeça (Cumprimento / Olá / Bom dia)
-      if (indexTip.y < wrist.y - 0.25) {
+      // Gesto: Mão levantada (Olá / Bom dia)
+      if (indexTip.y < wrist.y - 0.2) {
         return 'Olá! Bom dia!';
       }
       
-      // Gesto: Polegar e indicador próximos no peito (Posso ajudar?)
+      // Gesto: Pinça indicador-polegar (Posso ajudar?)
       const dist = Math.hypot(indexTip.x - thumbTip.x, indexTip.y - thumbTip.y);
       if (dist < 0.05) {
         return 'Como posso ajudar?';
@@ -173,7 +214,6 @@
       return null;
     }
 
-    // 4. Configuração do MediaPipe Hands
     const hands = new Hands({
       locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`
     });
@@ -181,27 +221,29 @@
     hands.setOptions({
       maxNumHands: 2,
       modelComplexity: 1,
-      minDetectionConfidence: 0.65,
-      minTrackingConfidence: 0.65
+      minDetectionConfidence: 0.7,
+      minTrackingConfidence: 0.7
     });
 
     hands.onResults((results) => {
-      drawSilhouette(canvasCtx, canvasElement.width, canvasElement.height, results.multiHandLandmarks);
+      canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height);
 
-      if (results.multiHandLandmarks && results.multiHandLandmarks.length > 0) {
+      // 1. Renderiza o corpo preenchido no padrão visual solicitado
+      drawBodySilhouette(canvasCtx, canvasElement.width, canvasElement.height);
+
+      // 2. Renderiza as mãos estilizadas como luvas brancas
+      if (results.multiHandLandmarks) {
+        drawWhiteGloveHands(canvasCtx, canvasElement.width, canvasElement.height, results.multiHandLandmarks);
+
         const gestureDetected = detectLibras(results.multiHandLandmarks[0]);
-        
         if (gestureDetected && gestureDetected !== currentGesture) {
           currentGesture = gestureDetected;
-          statusDiv.innerText = `Sinal Detectado: ${gestureDetected}`;
+          statusDiv.innerText = `Sinal: ${gestureDetected}`;
           falar(gestureDetected);
         }
-      } else {
-        statusDiv.innerText = `Avatar Ativo (${currentPerfil.toUpperCase()})`;
       }
     });
 
-    // 5. Inicialização do Vídeo e Câmera
     const camera = new Camera(videoElement, {
       onFrame: async () => {
         await hands.send({ image: videoElement });

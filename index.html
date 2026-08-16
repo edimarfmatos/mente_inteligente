@@ -2,13 +2,23 @@
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8">
-  <title>Totem Interativo - Silhueta Elegante com Libras</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Projeto Spectro 2 - Atendente Virtual</title>
+  <!-- MediaPipe Pose & Camera Utils CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/pose/pose.js" crossorigin="anonymous"></script>
+
   <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; }
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
     body {
-      background: #e2dfd8; /* Fundo claro para destacar a silhueta preta */
-      color: #1a1a1a;
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background-color: #030308;
+      color: #ffffff;
+      font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
       display: flex;
       flex-direction: column;
       align-items: center;
@@ -16,243 +26,398 @@
       min-height: 100vh;
       overflow: hidden;
     }
-    #container {
-      position: relative;
-      width: 100vw;
-      height: 100vh;
+
+    .app-header {
+      margin-bottom: 12px;
+      text-align: center;
     }
-    video { display: none; }
-    canvas {
+
+    .app-header h1 {
+      font-size: 1.4rem;
+      letter-spacing: 2px;
+      color: #00f0ff;
+      text-shadow: 0 0 10px rgba(0, 240, 255, 0.5);
+    }
+
+    .app-header p {
+      font-size: 0.8rem;
+      color: #a0a0c0;
+    }
+
+    /* Totem Container (Proporção Vertical 9:16) */
+    .totem-container {
+      position: relative;
+      width: 380px;
+      height: 660px;
+      background: radial-gradient(circle at center, #0f1026 0%, #020205 100%);
+      border: 3px solid #00f0ff;
+      border-radius: 24px;
+      box-shadow: 0 0 35px rgba(0, 240, 255, 0.25), inset 0 0 20px rgba(0, 240, 255, 0.1);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+
+    /* Header Superior */
+    .totem-header {
+      width: 100%;
+      padding: 12px;
+      text-align: center;
+      background: linear-gradient(180deg, rgba(0, 240, 255, 0.15) 0%, rgba(0, 0, 0, 0) 100%);
+      z-index: 10;
+    }
+
+    .totem-brand {
+      font-size: 0.75rem;
+      font-weight: 700;
+      letter-spacing: 3px;
+      color: #00f0ff;
+    }
+
+    .status-badge {
+      display: inline-block;
+      margin-top: 4px;
+      padding: 3px 10px;
+      font-size: 0.65rem;
+      border-radius: 12px;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(0, 240, 255, 0.3);
+      color: #a0f0ff;
+    }
+
+    /* Viewport do Avatar Animado */
+    .viewport {
       position: absolute;
       top: 0;
       left: 0;
       width: 100%;
       height: 100%;
+      z-index: 1;
     }
-    #ui-overlay {
+
+    video { display: none; }
+
+    canvas {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+
+    /* Interface Interativa do Usuário (Touchscreen) */
+    .totem-ui {
       position: absolute;
-      bottom: 40px;
-      left: 50%;
-      transform: translateX(-50%);
-      background: rgba(255, 255, 255, 0.9);
-      border: 2px solid #1a1a1a;
-      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
-      padding: 16px 32px;
-      border-radius: 12px;
+      bottom: 0;
+      width: 100%;
+      padding: 20px;
+      background: linear-gradient(0deg, rgba(2, 2, 5, 0.95) 20%, rgba(2, 2, 5, 0.7) 70%, rgba(2, 2, 5, 0) 100%);
       text-align: center;
       z-index: 10;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
     }
-    .status { font-size: 1.2rem; color: #1a1a1a; font-weight: 700; }
-    .subtitle { font-size: 0.95rem; color: #555555; margin-top: 4px; }
-  </style>
 
-  <!-- CDNs do MediaPipe -->
-  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
-  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js" crossorigin="anonymous"></script>
+    .greeting-box {
+      min-height: 50px;
+    }
+
+    .greeting-title {
+      font-size: 1.3rem;
+      font-weight: 700;
+      color: #ffffff;
+      text-shadow: 0 0 10px rgba(0, 240, 255, 0.8);
+      margin-bottom: 4px;
+    }
+
+    .greeting-subtitle {
+      font-size: 0.8rem;
+      color: #8da4c0;
+    }
+
+    /* Painel de Botões de Departamento */
+    .menu-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      width: 100%;
+      margin-top: 5px;
+      opacity: 0;
+      transform: translateY(15px);
+      transition: all 0.5s ease;
+      pointer-events: none;
+    }
+
+    .menu-grid.active {
+      opacity: 1;
+      transform: translateY(0);
+      pointer-events: auto;
+    }
+
+    .touch-btn {
+      padding: 10px 8px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: #00f0ff;
+      background: rgba(0, 240, 255, 0.08);
+      border: 1px solid rgba(0, 240, 255, 0.4);
+      border-radius: 12px;
+      cursor: pointer;
+      backdrop-filter: blur(5px);
+      transition: all 0.2s ease;
+    }
+
+    .touch-btn:active, .touch-btn:hover {
+      background: #00f0ff;
+      color: #020205;
+      box-shadow: 0 0 15px rgba(0, 240, 255, 0.8);
+    }
+
+    /* Seletor de Perfil Simulado */
+    .profile-selector {
+      position: absolute;
+      top: 50px;
+      right: 10px;
+      z-index: 15;
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+    }
+
+    .profile-btn {
+      padding: 4px 8px;
+      font-size: 0.6rem;
+      background: rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      color: #aaa;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+
+    .profile-btn.active {
+      background: #ff007f;
+      color: #fff;
+      border-color: #ff007f;
+    }
+  </style>
 </head>
 <body>
 
-  <div id="container">
-    <video id="input-video" playsinline></video>
-    <canvas id="output-canvas"></canvas>
-    
-    <div id="ui-overlay">
-      <div id="status" class="status">Silhueta Pronta</div>
-      <div id="subtitle" class="subtitle">Faça um sinal de Libras em frente à câmera</div>
+  <div class="app-header">
+    <h1>PROJETO SPECTRO 2</h1>
+    <p>Atendente Virtual Inteligente & Touchscreen</p>
+  </div>
+
+  <div class="totem-container">
+    <div class="totem-header">
+      <div class="totem-brand">SPECTRO AVATAR AI</div>
+      <div id="statusBadge" class="status-badge">Aguardando Cliente...</div>
+    </div>
+
+    <!-- Simulação do perfil detectado para testes -->
+    <div class="profile-selector">
+      <span style="font-size:0.55rem; color:#666;">Perfil Simulado:</span>
+      <button class="profile-btn active" onclick="setProfile('homem')">Homem</button>
+      <button class="profile-btn" onclick="setProfile('mulher')">Mulher</button>
+      <button class="profile-btn" onclick="setProfile('jovem')">Criança/Jovem</button>
+    </div>
+
+    <div class="viewport">
+      <video id="webcamInput" playsinline></video>
+      <canvas id="spectroCanvas"></canvas>
+    </div>
+
+    <div class="totem-ui">
+      <div class="greeting-box">
+        <div id="greetingTitle" class="greeting-title">Aproxime-se...</div>
+        <div id="greetingSubtitle" class="greeting-subtitle">O atendente virtual irá ajudá-lo na sua compra</div>
+      </div>
+
+      <div id="menuGrid" class="menu-grid">
+        <button class="touch-btn" onclick="speakAndDirect('Promoções do Dia', 'As promoções estão no Corredor 3, ao lado do Hortifruti!')">🏷️ Promoções</button>
+        <button class="touch-btn" onclick="speakAndDirect('Perfumaria', 'A linha de Perfumaria e Beleza fica no Corredor 1 à esquerda.')">✨ Perfumaria</button>
+        <button class="touch-btn" onclick="speakAndDirect('Bebidas & Adega', 'A adega e bebidas geladas estão nos fundos da loja, Corredor 7.')">🍷 Bebidas</button>
+        <button class="touch-btn" onclick="speakAndDirect('Atendimento Humano', 'Um de nossos colaboradores foi notificado e já vem te atender!')">🙋 Atendente</button>
+      </div>
     </div>
   </div>
 
   <script>
-    const videoElement = document.getElementById('input-video');
-    const canvasElement = document.getElementById('output-canvas');
+    const videoElement = document.getElementById('webcamInput');
+    const canvasElement = document.getElementById('spectroCanvas');
     const canvasCtx = canvasElement.getContext('2d');
-    const statusDiv = document.getElementById('status');
-    const subtitleDiv = document.getElementById('subtitle');
+    const statusBadge = document.getElementById('statusBadge');
+    const greetingTitle = document.getElementById('greetingTitle');
+    const greetingSubtitle = document.getElementById('greetingSubtitle');
+    const menuGrid = document.getElementById('menuGrid');
 
-    let currentPerfil = 'masculino'; // 'masculino' ou 'feminino'
-    let currentGesture = '';
+    let userDetected = false;
+    let currentProfile = 'homem'; // homem, mulher, jovem
+    let animAngle = 0;
 
-    function resizeCanvas() {
-      canvasElement.width = window.innerWidth;
-      canvasElement.height = window.innerHeight;
+    // Configurações de Cores e Estilos para cada Spectro Avatar
+    const AVATAR_STYLES = {
+      homem: { primary: '#00f0ff', secondary: '#0066ff', title: 'Atendente Spectro (M)', voicePitch: 0.9 },
+      mulher: { primary: '#ff007f', secondary: '#ff66cc', title: 'Atendente Spectro (F)', voicePitch: 1.2 },
+      jovem: { primary: '#39ff14', secondary: '#00ffcc', title: 'Atendente Spectro (Jovem)', voicePitch: 1.4 }
+    };
+
+    function setupCanvasSize() {
+      canvasElement.width = canvasElement.offsetWidth;
+      canvasElement.height = canvasElement.offsetHeight;
     }
-    window.addEventListener('resize', resizeCanvas);
-    resizeCanvas();
+    window.addEventListener('resize', setupCanvasSize);
 
-    function falar(texto) {
+    function setProfile(profile) {
+      currentProfile = profile;
+      document.querySelectorAll('.profile-btn').forEach(btn => btn.classList.remove('active'));
+      event.target.classList.add('active');
+      if (userDetected) triggerUserDetectedState();
+    }
+
+    // Sintetizador de Voz do Navegador
+    function speakText(text) {
       if ('speechSynthesis' in window) {
         window.speechSynthesis.cancel();
-        const utterance = new SpeechSynthesisUtterance(texto);
+        const utterance = new SpeechSynthesisUtterance(text);
         utterance.lang = 'pt-BR';
+        utterance.pitch = AVATAR_STYLES[currentProfile].voicePitch;
         utterance.rate = 1.0;
         window.speechSynthesis.speak(utterance);
-        subtitleDiv.innerText = `Avatar: "${texto}"`;
       }
     }
 
-    // Desenha o corpo preenchido em preto (Padrão das Imagens)
-    function drawBodySilhouette(ctx, width, height) {
-      const cx = width / 2;
-      const cy = height / 2.2;
-
-      ctx.fillStyle = '#111111'; // Preto sólido da silhueta
-
-      if (currentPerfil === 'masculino') {
-        // --- CABEÇA ---
-        ctx.beginPath();
-        ctx.ellipse(cx, cy - 140, 40, 52, 0, 0, Math.PI * 2);
-        ctx.fill();
-
-        // --- GOLA & GRAVATA (Acentos em Branco/Cinza) ---
-        ctx.fillStyle = '#ffffff';
-        ctx.beginPath(); // Gola da camisa
-        ctx.moveTo(cx - 18, cy - 90);
-        ctx.lineTo(cx, cy - 50);
-        ctx.lineTo(cx + 18, cy - 90);
-        ctx.fill();
-
-        ctx.fillStyle = '#111111';
-        ctx.beginPath(); // Gravata
-        ctx.moveTo(cx - 6, cy - 75);
-        ctx.lineTo(cx + 6, cy - 75);
-        ctx.lineTo(cx + 4, cy - 15);
-        ctx.lineTo(cx, cy - 5);
-        ctx.lineTo(cx - 4, cy - 15);
-        ctx.fill();
-
-        // --- CORPO & TERNO ---
-        ctx.beginPath();
-        ctx.moveTo(cx - 18, cy - 88);
-        ctx.lineTo(cx - 95, cy - 50);  // Ombro esquerdo
-        ctx.lineTo(cx - 75, cy + 120); // Cintura esquerda
-        ctx.lineTo(cx - 85, cy + 320); // Perna esquerda
-        ctx.lineTo(cx - 30, cy + 320);
-        ctx.lineTo(cx - 5, cy + 140);  // Entrepernas
-        ctx.lineTo(cx + 5, cy + 140);
-        ctx.lineTo(cx + 30, cy + 320);
-        ctx.lineTo(cx + 85, cy + 320); // Perna direita
-        ctx.lineTo(cx + 75, cy + 120); // Cintura direita
-        ctx.lineTo(cx + 95, cy - 50);  // Ombro direito
-        ctx.lineTo(cx + 18, cy - 88);
-        ctx.fill();
-
-      } else {
-        // --- PERFIL FEMININO ---
-        ctx.beginPath();
-        ctx.ellipse(cx, cy - 135, 38, 50, 0, 0, Math.PI * 2); // Cabeça/Cabelo
-        ctx.fill();
-
-        ctx.beginPath();
-        ctx.moveTo(cx - 15, cy - 85);
-        ctx.lineTo(cx - 75, cy - 55);  // Ombro esquerdo
-        ctx.lineTo(cx - 55, cy + 40);  // Cintura marcada
-        ctx.lineTo(cx - 70, cy + 300); // Calça/Saia
-        ctx.lineTo(cx + 70, cy + 300);
-        ctx.lineTo(cx + 55, cy + 40);
-        ctx.lineTo(cx + 75, cy - 55);  // Ombro direito
-        ctx.lineTo(cx + 15, cy - 85);
-        ctx.fill();
-      }
+    function speakAndDirect(title, message) {
+      greetingTitle.innerText = title;
+      greetingSubtitle.innerText = message;
+      speakText(message);
     }
 
-    // Desenha as mãos rastreadas em BRANCO (Detalhe de Luva Branca)
-    function drawWhiteGloveHands(ctx, width, height, handLandmarksList) {
-      if (!handLandmarksList) return;
-
-      handLandmarksList.forEach(landmarks => {
-        // Estilo da luva
-        ctx.fillStyle = '#ffffff';
-        ctx.strokeStyle = '#cccccc';
-        ctx.lineWidth = 2;
-
-        // Desenha palma e preenchimento dos dedos em formato estilizado
-        landmarks.forEach((lm) => {
-          const x = (1 - lm.x) * width;
-          const y = lm.y * height;
-
-          ctx.beginPath();
-          ctx.arc(x, y, 11, 0, Math.PI * 2); // Nós dos dedos com "efeito luva"
-          ctx.fill();
-          ctx.stroke();
-        });
-
-        // Conecta as articulações da luva
-        const connections = Hands.HAND_CONNECTIONS;
-        ctx.beginPath();
-        ctx.strokeStyle = '#ffffff';
-        ctx.lineWidth = 14; // Traço espesso para simular o preenchimento da luva
-        ctx.lineCap = 'round';
-
-        connections.forEach(([i, j]) => {
-          const p1 = landmarks[i];
-          const p2 = landmarks[j];
-          ctx.moveTo((1 - p1.x) * width, p1.y * height);
-          ctx.lineTo((1 - p2.x) * width, p2.y * height);
-        });
-        ctx.stroke();
-      });
-    }
-
-    function detectLibras(handLandmarks) {
-      if (!handLandmarks) return null;
-
-      const wrist = handLandmarks[0];
-      const indexTip = handLandmarks[8];
-      const thumbTip = handLandmarks[4];
-
-      // Gesto: Mão levantada (Olá / Bom dia)
-      if (indexTip.y < wrist.y - 0.2) {
-        return 'Olá! Bom dia!';
-      }
-      
-      // Gesto: Pinça indicador-polegar (Posso ajudar?)
-      const dist = Math.hypot(indexTip.x - thumbTip.x, indexTip.y - thumbTip.y);
-      if (dist < 0.05) {
-        return 'Como posso ajudar?';
+    // Processamento de Detecção via Câmera
+    function onResults(results) {
+      if (statusBadge.innerText !== "Procurando Cliente...") {
+        statusBadge.innerText = "IA Ativa";
       }
 
-      return null;
+      if (results.poseLandmarks && results.poseLandmarks.length > 0) {
+        const landmarks = results.poseLandmarks;
+        const isClose = (landmarks[11].visibility > 0.5 && landmarks[12].visibility > 0.5);
+
+        if (isClose && !userDetected) {
+          userDetected = true;
+          triggerUserDetectedState();
+        } else if (!isClose && userDetected) {
+          userDetected = false;
+          triggerIdleState();
+        }
+      } else if (userDetected) {
+        userDetected = false;
+        triggerIdleState();
+      }
+
+      // Renderiza o Avatar Autônomo (Independente do movimento do usuário)
+      drawAutonomousAvatar();
     }
 
-    const hands = new Hands({
-      locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`
-    });
-
-    hands.setOptions({
-      maxNumHands: 2,
-      modelComplexity: 1,
-      minDetectionConfidence: 0.7,
-      minTrackingConfidence: 0.7
-    });
-
-    hands.onResults((results) => {
+    // Desenha o Avatar Spectro com Animação Fluida Própria
+    function drawAutonomousAvatar() {
       canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height);
 
-      // 1. Renderiza o corpo preenchido no padrão visual solicitado
-      drawBodySilhouette(canvasCtx, canvasElement.width, canvasElement.height);
+      const cx = canvasElement.width / 2;
+      const cy = canvasElement.height / 2 - 30;
+      const style = AVATAR_STYLES[currentProfile];
 
-      // 2. Renderiza as mãos estilizadas como luvas brancas
-      if (results.multiHandLandmarks) {
-        drawWhiteGloveHands(canvasCtx, canvasElement.width, canvasElement.height, results.multiHandLandmarks);
+      animAngle += 0.04;
+      const pulse = Math.sin(animAngle) * 8;
 
-        const gestureDetected = detectLibras(results.multiHandLandmarks[0]);
-        if (gestureDetected && gestureDetected !== currentGesture) {
-          currentGesture = gestureDetected;
-          statusDiv.innerText = `Sinal: ${gestureDetected}`;
-          falar(gestureDetected);
-        }
+      canvasCtx.save();
+      canvasCtx.shadowBlur = 20;
+      canvasCtx.shadowColor = style.primary;
+      canvasCtx.strokeStyle = style.primary;
+      canvasCtx.fillStyle = style.secondary;
+      canvasCtx.lineWidth = 3;
+
+      // 1. Cabeça / Núcleo do Spectro
+      canvasCtx.beginPath();
+      canvasCtx.arc(cx, cy - 80 + Math.sin(animAngle * 0.8) * 5, 35 + pulse * 0.3, 0, Math.PI * 2);
+      canvasCtx.stroke();
+
+      // Olhos futuristas do Avatar
+      canvasCtx.fillStyle = style.primary;
+      canvasCtx.beginPath();
+      canvasCtx.arc(cx - 10, cy - 85, 4, 0, Math.PI * 2);
+      canvasCtx.arc(cx + 10, cy - 85, 4, 0, Math.PI * 2);
+      canvasCtx.fill();
+
+      // 2. Ombro e Tronco Estilizado (Geométrico)
+      canvasCtx.beginPath();
+      canvasCtx.moveTo(cx - 70, cy + 20);
+      canvasCtx.lineTo(cx + 70, cy + 20);
+      canvasCtx.lineTo(cx + 40, cy + 120);
+      canvasCtx.lineTo(cx - 40, cy + 120);
+      canvasCtx.closePath();
+      canvasCtx.stroke();
+
+      // 3. Anéis de Energia Orbitando o Avatar (Efeito 'Spectro')
+      for (let i = 0; i < 3; i++) {
+        canvasCtx.beginPath();
+        const radius = 60 + i * 25 + pulse;
+        canvasCtx.ellipse(cx, cy + 20, radius, radius * 0.3, animAngle + i, 0, Math.PI * 2);
+        canvasCtx.strokeStyle = i % 2 === 0 ? style.primary : style.secondary;
+        canvasCtx.stroke();
       }
+
+      canvasCtx.restore();
+    }
+
+    function triggerUserDetectedState() {
+      const style = AVATAR_STYLES[currentProfile];
+      greetingTitle.innerText = "Olá! Posso Ajudar?";
+      greetingTitle.style.color = style.primary;
+      greetingSubtitle.innerText = "Toque na tela ou escolha uma das opções abaixo:";
+      menuGrid.classList.add('active');
+
+      speakText("Olá! Bem-vindo! Como posso ajudar você hoje?");
+    }
+
+    function triggerIdleState() {
+      greetingTitle.innerText = "Aproxime-se...";
+      greetingTitle.style.color = "#ffffff";
+      greetingSubtitle.innerText = "O atendente virtual irá ajudá-lo na sua compra";
+      menuGrid.classList.remove('active');
+      window.speechSynthesis.cancel();
+    }
+
+    // Inicialização da Câmera
+    const pose = new Pose({
+      locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/pose/${file}`
     });
+
+    pose.setOptions({
+      modelComplexity: 1,
+      smoothLandmarks: true,
+      minDetectionConfidence: 0.5,
+      minTrackingConfidence: 0.5
+    });
+
+    pose.onResults(onResults);
 
     const camera = new Camera(videoElement, {
-      onFrame: async () => {
-        await hands.send({ image: videoElement });
-      },
-      width: 1280,
-      height: 720
+      onFrame: async () => { await pose.send({ image: videoElement }); },
+      width: 640,
+      height: 480
     });
 
-    camera.start();
+    setupCanvasSize();
+    camera.start().then(() => {
+      statusBadge.innerText = "Procurando Cliente...";
+    }).catch(err => {
+      statusBadge.innerText = "Erro na Câmera";
+      statusBadge.style.color = "#ff4d4d";
+    });
   </script>
 </body>
 </html>
+projeto_spectro_2.html
+Exibindo projeto_spectro_2.html.

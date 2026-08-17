@@ -2,13 +2,14 @@
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8">
-  <title>Totem Interativo - Silhueta Elegante com Libras</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>Totem Mobile - Silhueta e Libras</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
-      background: #e2dfd8; /* Fundo claro para destacar a silhueta preta */
-      color: #1a1a1a;
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: #080808;
+      color: #ffffff;
+      font-family: system-ui, -apple-system, sans-serif;
       display: flex;
       flex-direction: column;
       align-items: center;
@@ -31,34 +32,34 @@
     }
     #ui-overlay {
       position: absolute;
-      bottom: 40px;
+      bottom: 20px;
       left: 50%;
       transform: translateX(-50%);
-      background: rgba(255, 255, 255, 0.9);
-      border: 2px solid #1a1a1a;
-      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
-      padding: 16px 32px;
-      border-radius: 12px;
+      background: rgba(15, 23, 42, 0.9);
+      border: 1px solid #00f0ff;
+      padding: 10px 20px;
+      border-radius: 20px;
       text-align: center;
       z-index: 10;
+      width: 85%;
+      max-width: 350px;
     }
-    .status { font-size: 1.2rem; color: #1a1a1a; font-weight: 700; }
-    .subtitle { font-size: 0.95rem; color: #555555; margin-top: 4px; }
+    .status { font-size: 1rem; color: #00f0ff; font-weight: 600; }
+    .subtitle { font-size: 0.8rem; color: #94a3b8; margin-top: 2px; }
   </style>
 
-  <!-- CDNs do MediaPipe -->
   <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
   <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js" crossorigin="anonymous"></script>
 </head>
 <body>
 
   <div id="container">
-    <video id="input-video" playsinline></video>
+    <video id="input-video" playsinline webkit-playsinline></video>
     <canvas id="output-canvas"></canvas>
     
     <div id="ui-overlay">
-      <div id="status" class="status">Silhueta Pronta</div>
-      <div id="subtitle" class="subtitle">Faça um sinal de Libras em frente à câmera</div>
+      <div id="status" class="status">Iniciando Câmera...</div>
+      <div id="subtitle" class="subtitle">Mostre a mão para interagir</div>
     </div>
   </div>
 
@@ -79,6 +80,7 @@
     window.addEventListener('resize', resizeCanvas);
     resizeCanvas();
 
+    // 1. Síntese de Voz (Resposta do Avatar)
     function falar(texto) {
       if ('speechSynthesis' in window) {
         window.speechSynthesis.cancel();
@@ -90,109 +92,80 @@
       }
     }
 
-    // Desenha o corpo preenchido em preto (Padrão das Imagens)
-    function drawBodySilhouette(ctx, width, height) {
+    // 2. Desenho dos Contornos
+    function drawDetailedSilhouette(ctx, width, height, handLandmarksList) {
+      ctx.clearRect(0, 0, width, height);
+
+      ctx.strokeStyle = '#ffffff';
+      ctx.lineWidth = 2;
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
+
       const cx = width / 2;
       const cy = height / 2.2;
 
-      ctx.fillStyle = '#111111'; // Preto sólido da silhueta
+      ctx.save();
+      ctx.translate(cx, cy);
+
+      // --- CAMINHO MASCULINO ---
+      const maleSuitPath = new Path2D(`
+        M-30,-120 C-45,-120 -50,-100 -50,-85 C-50,-70 -45,-55 -30,-55 L30,-55 C45,-55 50,-70 50,-85 C50,-100 45,-120 30,-120 Z
+        M-50,-85 L-95,-70 L-75,90 L-85,280 L-30,280 L-5,100 L5,100 L30,280 L85,280 L75,90 L95,-70 L50,-85 Z
+        M-25,-90 L-15,-70 L-20,-80 M15,-70 L25,-90 L20,-80
+        M0,-60 L-8,-80 M0,-60 L8,-80
+        M0,-50 C-10,-55 -15,-65 -15,-75 L0,-85 L15,-75 C15,-65 10,-55 0,-50 Z
+        M0,-5 L-4,-15 L-6,-80 M0,-5 L4,-15 L6,-80
+        M-80,-20 C-100,-20 -110,-10 -110,10 L-95,140 C-95,150 -90,160 -80,160
+        M80,-20 C100,-20 110,-10 110,10 L95,140 C95,150 90,160 80,160
+      `);
+
+      // --- CAMINHO FEMININO ---
+      const femaleSuitPath = new Path2D(`
+        M-25,-120 C-40,-120 -45,-105 -45,-90 C-45,-75 -40,-60 -25,-60 L25,-60 C40,-60 45,-75 45,-90 C45,-105 40,-120 25,-120 Z
+        M-45,-90 L-80,-75 L-65,70 L-75,280 L75,280 L65,70 L80,-75 L45,-90
+        M-20,-90 L-10,-75 M10,-75 L20,-90
+        M-65,40 C-50,45 -35,50 0,50 C35,50 50,45 65,40
+        M-85,-25 C-105,-25 -115,-15 -115,5 L-100,120 C-100,130 -95,140 -85,140
+        M85,-25 C105,-25 115,-15 115,5 L100,120 C100,130 95,140 85,140
+      `);
 
       if (currentPerfil === 'masculino') {
-        // --- CABEÇA ---
-        ctx.beginPath();
-        ctx.ellipse(cx, cy - 140, 40, 52, 0, 0, Math.PI * 2);
-        ctx.fill();
-
-        // --- GOLA & GRAVATA (Acentos em Branco/Cinza) ---
-        ctx.fillStyle = '#ffffff';
-        ctx.beginPath(); // Gola da camisa
-        ctx.moveTo(cx - 18, cy - 90);
-        ctx.lineTo(cx, cy - 50);
-        ctx.lineTo(cx + 18, cy - 90);
-        ctx.fill();
-
-        ctx.fillStyle = '#111111';
-        ctx.beginPath(); // Gravata
-        ctx.moveTo(cx - 6, cy - 75);
-        ctx.lineTo(cx + 6, cy - 75);
-        ctx.lineTo(cx + 4, cy - 15);
-        ctx.lineTo(cx, cy - 5);
-        ctx.lineTo(cx - 4, cy - 15);
-        ctx.fill();
-
-        // --- CORPO & TERNO ---
-        ctx.beginPath();
-        ctx.moveTo(cx - 18, cy - 88);
-        ctx.lineTo(cx - 95, cy - 50);  // Ombro esquerdo
-        ctx.lineTo(cx - 75, cy + 120); // Cintura esquerda
-        ctx.lineTo(cx - 85, cy + 320); // Perna esquerda
-        ctx.lineTo(cx - 30, cy + 320);
-        ctx.lineTo(cx - 5, cy + 140);  // Entrepernas
-        ctx.lineTo(cx + 5, cy + 140);
-        ctx.lineTo(cx + 30, cy + 320);
-        ctx.lineTo(cx + 85, cy + 320); // Perna direita
-        ctx.lineTo(cx + 75, cy + 120); // Cintura direita
-        ctx.lineTo(cx + 95, cy - 50);  // Ombro direito
-        ctx.lineTo(cx + 18, cy - 88);
-        ctx.fill();
-
+        ctx.stroke(maleSuitPath);
       } else {
-        // --- PERFIL FEMININO ---
-        ctx.beginPath();
-        ctx.ellipse(cx, cy - 135, 38, 50, 0, 0, Math.PI * 2); // Cabeça/Cabelo
-        ctx.fill();
+        ctx.stroke(femaleSuitPath);
+      }
+      ctx.restore();
 
-        ctx.beginPath();
-        ctx.moveTo(cx - 15, cy - 85);
-        ctx.lineTo(cx - 75, cy - 55);  // Ombro esquerdo
-        ctx.lineTo(cx - 55, cy + 40);  // Cintura marcada
-        ctx.lineTo(cx - 70, cy + 300); // Calça/Saia
-        ctx.lineTo(cx + 70, cy + 300);
-        ctx.lineTo(cx + 55, cy + 40);
-        ctx.lineTo(cx + 75, cy - 55);  // Ombro direito
-        ctx.lineTo(cx + 15, cy - 85);
-        ctx.fill();
+      // --- TRAÇOS DAS MÃOS (Luvas Brancas) ---
+      if (handLandmarksList && handLandmarksList.length > 0) {
+        handLandmarksList.forEach(landmarks => {
+          ctx.beginPath();
+          ctx.strokeStyle = '#ffffff';
+          ctx.lineWidth = 12;
+          ctx.lineCap = 'round';
+
+          const connections = Hands.HAND_CONNECTIONS;
+          connections.forEach(([i, j]) => {
+            const p1 = landmarks[i];
+            const p2 = landmarks[j];
+            ctx.moveTo((1 - p1.x) * width, p1.y * height);
+            ctx.lineTo((1 - p2.x) * width, p2.y * height);
+          });
+          ctx.stroke();
+
+          ctx.fillStyle = '#111111';
+          ctx.lineWidth = 2;
+          landmarks.forEach(lm => {
+            ctx.beginPath();
+            ctx.arc((1 - lm.x) * width, lm.y * height, 3, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.stroke();
+          });
+        });
       }
     }
 
-    // Desenha as mãos rastreadas em BRANCO (Detalhe de Luva Branca)
-    function drawWhiteGloveHands(ctx, width, height, handLandmarksList) {
-      if (!handLandmarksList) return;
-
-      handLandmarksList.forEach(landmarks => {
-        // Estilo da luva
-        ctx.fillStyle = '#ffffff';
-        ctx.strokeStyle = '#cccccc';
-        ctx.lineWidth = 2;
-
-        // Desenha palma e preenchimento dos dedos em formato estilizado
-        landmarks.forEach((lm) => {
-          const x = (1 - lm.x) * width;
-          const y = lm.y * height;
-
-          ctx.beginPath();
-          ctx.arc(x, y, 11, 0, Math.PI * 2); // Nós dos dedos com "efeito luva"
-          ctx.fill();
-          ctx.stroke();
-        });
-
-        // Conecta as articulações da luva
-        const connections = Hands.HAND_CONNECTIONS;
-        ctx.beginPath();
-        ctx.strokeStyle = '#ffffff';
-        ctx.lineWidth = 14; // Traço espesso para simular o preenchimento da luva
-        ctx.lineCap = 'round';
-
-        connections.forEach(([i, j]) => {
-          const p1 = landmarks[i];
-          const p2 = landmarks[j];
-          ctx.moveTo((1 - p1.x) * width, p1.y * height);
-          ctx.lineTo((1 - p2.x) * width, p2.y * height);
-        });
-        ctx.stroke();
-      });
-    }
-
+    // 3. Reconhecimento de Gestos em Libras
     function detectLibras(handLandmarks) {
       if (!handLandmarks) return null;
 
@@ -200,12 +173,10 @@
       const indexTip = handLandmarks[8];
       const thumbTip = handLandmarks[4];
 
-      // Gesto: Mão levantada (Olá / Bom dia)
       if (indexTip.y < wrist.y - 0.2) {
         return 'Olá! Bom dia!';
       }
       
-      // Gesto: Pinça indicador-polegar (Posso ajudar?)
       const dist = Math.hypot(indexTip.x - thumbTip.x, indexTip.y - thumbTip.y);
       if (dist < 0.05) {
         return 'Como posso ajudar?';
@@ -214,42 +185,42 @@
       return null;
     }
 
+    // 4. Configuração do MediaPipe
     const hands = new Hands({
       locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`
     });
 
     hands.setOptions({
       maxNumHands: 2,
-      modelComplexity: 1,
-      minDetectionConfidence: 0.7,
-      minTrackingConfidence: 0.7
+      modelComplexity: 0, // Ajustado para 0 para ser leve no processador do celular
+      minDetectionConfidence: 0.6,
+      minTrackingConfidence: 0.6
     });
 
     hands.onResults((results) => {
-      canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height);
+      drawDetailedSilhouette(canvasCtx, canvasElement.width, canvasElement.height, results.multiHandLandmarks);
 
-      // 1. Renderiza o corpo preenchido no padrão visual solicitado
-      drawBodySilhouette(canvasCtx, canvasElement.width, canvasElement.height);
-
-      // 2. Renderiza as mãos estilizadas como luvas brancas
-      if (results.multiHandLandmarks) {
-        drawWhiteGloveHands(canvasCtx, canvasElement.width, canvasElement.height, results.multiHandLandmarks);
-
+      if (results.multiHandLandmarks && results.multiHandLandmarks.length > 0) {
         const gestureDetected = detectLibras(results.multiHandLandmarks[0]);
+        
         if (gestureDetected && gestureDetected !== currentGesture) {
           currentGesture = gestureDetected;
           statusDiv.innerText = `Sinal: ${gestureDetected}`;
           falar(gestureDetected);
         }
+      } else {
+        statusDiv.innerText = `Avatar Ativo`;
       }
     });
 
+    // 5. Inicialização da Câmera Frontal/Traseira do Celular
     const camera = new Camera(videoElement, {
       onFrame: async () => {
         await hands.send({ image: videoElement });
       },
-      width: 1280,
-      height: 720
+      width: 640,  // Resolução reduzida para garantir boa taxa de quadros no smartphone
+      height: 480,
+      facingMode: "user" // Usa a câmera frontal por padrão
     });
 
     camera.start();
